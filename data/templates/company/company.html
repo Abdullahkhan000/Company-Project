@@ -119,6 +119,13 @@ a:hover{ text-decoration:underline; }
     <button type="submit">Save Company</button>
 </form>
 
+<footer style="text-align:center; margin-top:60px; font-family:'Poppins',sans-serif; color:#555;">
+  <p>Made with <span style="color:#e25555;">♥</span> by
+     <strong>Hafiz Muhammad Abdullah Ibrahim</strong>
+  </p>
+</footer>
+
+
 <script>
 const apiUrl = '/company/';
 function getCSRFToken() { return document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1]; }
