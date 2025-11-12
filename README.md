@@ -30,7 +30,7 @@ http://127.0.0.1:8000/companyv2/?status=active
 | Frontend | HTML + CSS + JavaScript (Fetch API) |
 | Database | SQLite (default) |
 | Filtering | `django-filter` + `OrderingFilter` + `SearchFilter` |
-| Serializer | DRF `ModelSerializer` |
+| Serializer | DRF `serializers.Serializer` |
 | View | Custom `APIView` |
 | Templates | Django Template Engine |
 
