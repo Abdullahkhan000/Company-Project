@@ -83,8 +83,10 @@ Content-Type: application/json
   "total_workers": 45
 }
 
+Preview:-
+<img width="1920" height="1449" alt="screenshot-20251112133907" src="https://github.com/user-attachments/assets/4ef8b778-fc61-4906-b2c5-78913f98edeb" />
 
-      💡 Future Improvements
+  💡 Future Improvements
 
 Add authentication for company owners
 
