@@ -83,8 +83,24 @@ Content-Type: application/json
   "total_workers": 45
 }
 
-Preview:-
+---
+
+## 💻 Live Interface Preview
+
+Below are snapshots of the frontend interface — dynamically powered by Django REST Framework APIs.
+
 <img width="1920" height="1449" alt="screenshot-20251112133907" src="https://github.com/user-attachments/assets/4ef8b778-fc61-4906-b2c5-78913f98edeb" />
+
+<img width="1920" height="1266" alt="screenshot-20251112134136" src="https://github.com/user-attachments/assets/fa922aed-d7b1-4b44-9c84-b0b2af38ebe1" />
+
+---
+
+## 🧠 Django REST Framework (API Layer)
+
+A look at the DRF-powered backend where all API endpoints are managed and tested.
+
+<img width="1920" height="2192" alt="screenshot-20251112134224" src="https://github.com/user-attachments/assets/3ff13ef4-bb6d-4297-9351-cbd2d5c1d26f" />
+
 
   💡 Future Improvements
 
