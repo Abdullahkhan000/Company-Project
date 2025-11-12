@@ -82,3 +82,32 @@ Content-Type: application/json
   "status": "active",
   "total_workers": 45
 }
+
+
+      💡 Future Improvements
+
+Add authentication for company owners
+
+Integrate pagination for large datasets
+
+Implement object-level permissions
+
+Add frontend sorting UI with icons
+
+Add better error handling for fetch responses
+
+🧾 License
+
+This project is open-source and available under the MIT License
+.
+
+🌟 Show Support
+
+If you like this project:
+
+⭐ Star this repository on GitHub
+
+🧠 Fork it and extend it your own way
+
+💬 Share your ideas or improvements!
+
