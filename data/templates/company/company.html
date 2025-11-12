@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Management</title>
+<style>
+body { font-family: "Segoe UI", Roboto, Arial, sans-serif; margin: 20px; background: #f8f9fb; color: #333; }
+h1 { text-align:center; color:#0d6efd; cursor:pointer; transition:0.3s; }
+h1:hover{ color:#084298; }
+h2 { text-align:center; margin-top:25px; color:#444; }
+
+table { width:100%; border-collapse:collapse; margin-top:25px; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+th, td { border-bottom:1px solid #eee; padding:10px 8px; text-align:center; }
+th { background-color:#0d6efd; color:white; font-weight:500; }
+tr:nth-child(even){ background:#f9f9f9; }
+tr:hover{ background:#eef5ff; transition:0.2s; }
+
+button { background:#0d6efd; color:white; padding:8px 12px; border:none; border-radius:5px; cursor:pointer; font-size:14px; transition:0.2s; }
+button:hover{ background:#0a58ca; }
+button.delete{ background:#dc3545; }
+button.delete:hover{ background:#a71d2a; }
+
+form { background:#fff; padding:20px; border-radius:8px; margin-top:30px; box-shadow:0 2px 6px rgba(0,0,0,0.05); max-width:600px; margin:auto;}
+input, select, textarea { width:100%; padding:8px 10px; margin:6px 0 15px 0; border:1px solid #ccc; border-radius:5px; transition:0.2s;}
+input:focus, select:focus, textarea:focus { outline:none; border-color:#0d6efd; box-shadow:0 0 4px rgba(13,110,253,0.3); }
+
+.filter-bar { background:#fff; padding:15px; border-radius:8px; margin-bottom:25px; box-shadow:0 2px 6px rgba(0,0,0,0.05); display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+.filter-bar input, .filter-bar select { width:auto; padding:6px 10px; border-radius:4px; }
+
+img.logo { max-height:50px; max-width:100px; border-radius:5px; border:1px solid #eee; }
+a { color:#0d6efd; text-decoration:none; }
+a:hover{ text-decoration:underline; }
+</style>
+</head>
+<body>
+<h1 onclick="goHome()" title="Go to Home">Company Management</h1>
+
+<!-- Filter/Search -->
+<div class="filter-bar">
+    <form id="filter-form">
+        <input type="text" name="search" id="search" placeholder="Search company...">
+        <select name="status" id="status-filter">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="on_leave">On Leave</option>
+        </select>
+        <select name="ordering" id="order">
+            <option value="">Order By</option>
+            <option value="name">Name (A–Z)</option>
+            <option value="-name">Name (Z–A)</option>
+            <option value="total_workers">Workers ↑</option>
+            <option value="-total_workers">Workers ↓</option>
+            <option value="join">Join Date ↑</option>
+            <option value="-join">Join Date ↓</option>
+        </select>
+        <input type="number" name="total_workers_min" id="min-workers" placeholder="Min Workers">
+        <input type="number" name="total_workers_max" id="max-workers" placeholder="Max Workers">
+        <button type="submit">Apply</button>
+    </form>
+</div>
+
+<!-- Company Table -->
+<table id="company-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Employee</th>
+            <th>Name</th>
+            <th>Workers</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Join</th>
+            <th>Logo</th>
+            <th>Website</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td colspan="10">Loading companies...</td></tr>
+    </tbody>
+</table>
+
+<!-- Add/Edit Company Form -->
+<form id="company-form" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" id="company-id">
+    <h2>Add / Edit Company</h2>
+
+    <label for="employee">Employee (User ID)</label>
+    <input type="number" id="employee" placeholder="Enter employee ID">
+
+    <label for="name">Company Name</label>
+    <input type="text" id="name" placeholder="Enter company name" required>
+
+    <label for="total_workers">Total Workers</label>
+    <input type="number" id="total_workers" required>
+
+    <label for="address">Address</label>
+    <textarea id="address" placeholder="Enter company address" required></textarea>
+
+    <label for="status">Status</label>
+    <select id="status" required>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="on_leave">On Leave</option>
+    </select>
+
+    <label for="join">Joining Date</label>
+    <input type="date" id="join" required>
+
+    <label for="logo">Logo (Image)</label>
+    <input type="file" id="logo" accept="image/*">
+
+    <label for="website">Website</label>
+    <input type="url" id="website" placeholder="https://example.com">
+
+    <button type="submit">Save Company</button>
+</form>
+
+<script>
+const apiUrl = '/company/';
+function getCSRFToken() { return document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1]; }
+
+// 🏠 Home
+function goHome(){
+    window.history.pushState({}, '', '/companyv2/');
+    document.querySelector('#filter-form').reset();
+    document.querySelector('#company-form').reset();
+    document.querySelector('#company-id').value='';
+    document.querySelector('h2').innerText='Add / Edit Company';
+    fetchCompanies();
+}
+
+// 🧩 Fetch
+async function fetchCompanies(query=''){
+    const res = await fetch(apiUrl + (query ? '?' + query : ''));
+    const tbody = document.querySelector('#company-table tbody');
+    if(!res.ok){ tbody.innerHTML='<tr><td colspan="10">Error fetching data</td></tr>'; return; }
+    const data = await res.json();
+    const companies = Array.isArray(data)?data:[data];
+    tbody.innerHTML='';
+    if(!companies.length){ tbody.innerHTML='<tr><td colspan="10">No companies found.</td></tr>'; return; }
+    companies.forEach(c=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+            <td>${c.id}</td>
+            <td>${c.employee||'N/A'}</td>
+            <td>${c.name}</td>
+            <td>${c.total_workers}</td>
+            <td>${c.address}</td>
+            <td>${c.status}</td>
+            <td>${c.join}</td>
+            <td>${c.logo?'<img class="logo" src="'+c.logo+'" alt="Logo">':'N/A'}</td>
+            <td>${c.website?'<a href="'+c.website+'" target="_blank">Visit</a>':'N/A'}</td>
+            <td>
+                <button onclick="editCompany(${c.id})">Edit</button>
+                <button class="delete" onclick="deleteCompany(${c.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ✏️ Edit
+async function editCompany(id){
+    const res=await fetch(apiUrl+id+'/');
+    if(!res.ok) return;
+    const c=await res.json();
+    fillForm(c);
+    window.history.pushState({}, '', `/companyv2/${id}/`);
+    renderRows([c]);
+    document.querySelector('h2').innerText=`Editing Company #${id}`;
+}
+function fillForm(c){
+    document.querySelector('#company-id').value=c.id;
+    document.querySelector('#employee').value=c.employee||'';
+    document.querySelector('#name').value=c.name;
+    document.querySelector('#total_workers').value=c.total_workers;
+    document.querySelector('#address').value=c.address;
+    document.querySelector('#status').value=c.status;
+    document.querySelector('#join').value=c.join;
+    document.querySelector('#website').value=c.website||'';
+}
+function renderRows(companies){
+    const tbody=document.querySelector('#company-table tbody'); tbody.innerHTML='';
+    companies.forEach(c=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+            <td>${c.id}</td>
+            <td>${c.employee||'N/A'}</td>
+            <td>${c.name}</td>
+            <td>${c.total_workers}</td>
+            <td>${c.address}</td>
+            <td>${c.status}</td>
+            <td>${c.join}</td>
+            <td>${c.logo?'<img class="logo" src="'+c.logo+'" alt="Logo">':'N/A'}</td>
+            <td>${c.website?'<a href="'+c.website+'" target="_blank">Visit</a>':'N/A'}</td>
+            <td>
+                <button onclick="editCompany(${c.id})">Edit</button>
+                <button class="delete" onclick="deleteCompany(${c.id})">Delete</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+// 💾 Add/Update
+async function addOrUpdateCompany(e){
+    e.preventDefault();
+    const id=document.querySelector('#company-id').value;
+    const formData=new FormData();
+    formData.append('employee',document.querySelector('#employee').value||'');
+    formData.append('name',document.querySelector('#name').value);
+    formData.append('total_workers',document.querySelector('#total_workers').value);
+    formData.append('address',document.querySelector('#address').value);
+    formData.append('status',document.querySelector('#status').value);
+    formData.append('join',document.querySelector('#join').value);
+    formData.append('website',document.querySelector('#website').value);
+    const logo=document.querySelector('#logo').files[0]; if(logo) formData.append('logo',logo);
+    const method=id?'PATCH':'POST';
+    const url=id?`${apiUrl}${id}/`:apiUrl;
+    const res=await fetch(url,{method,headers:{'X-CSRFToken':getCSRFToken()},body:formData});
+    if(res.ok) goHome(); else alert('Error saving company.');
+}
+
+// 🗑 Delete
+async function deleteCompany(id){ if(!confirm('Are you sure?')) return;
+    const res=await fetch(apiUrl+id+'/',{method:'DELETE',headers:{'X-CSRFToken':getCSRFToken()}});
+    if(res.ok) goHome();
+}
+
+// 🔎 Filter submit
+document.querySelector('#filter-form').addEventListener('submit', e=>{
+    e.preventDefault();
+    const query=new URLSearchParams(new FormData(e.target)).toString();
+    window.history.pushState({}, '', '/companyv2/?'+query);
+    fetchCompanies(query);
+});
+
+// 🚦 Check URL
+async function checkForPK(){
+    const parts=window.location.pathname.split('/').filter(Boolean);
+    const last=parts[parts.length-1];
+    if(!isNaN(last)){
+        const res=await fetch(apiUrl+last+'/');
+        if(res.ok){
+            const c=await res.json();
+            fillForm(c);
+            renderRows([c]);
+            document.querySelector('h2').innerText=`Editing Company #${last}`;
+        }
+    } else {
+        const query=window.location.search.substring(1);
+        document.querySelector('h2').innerText='Add / Edit Company';
+        fetchCompanies(query);
+    }
+}
+
+document.querySelector('#company-form').addEventListener('submit', addOrUpdateCompany);
+window.onload=checkForPK;
+</script>
+</body>
+</html>
